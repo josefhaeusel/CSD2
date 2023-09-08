@@ -1,9 +1,19 @@
 import simpleaudio as sa
+import time
 
-filepath = "/Users/josef.haeusel/My Drive/Musikdesign/HKU/Unterricht/Python/CSD2_git/python_basics/toycar.wav"  #input("input path of .wav file")
+filepath = "/Users/josef.haeusel/My Drive/Musikdesign/HKU/Unterricht/Python/CSD2_git/python_basics/toycar.wav"  #OPTIONAL: input("input path of .wav file")
 wave_obj = sa.WaveObject.from_wave_file(filepath)
-n_times = int(input("How often do you want the file to play (int)?"))
 
-for x in range(n_times):
+numPlaybackTimes = int(input("How often do you want the file to play (int)?"))
+playback_rhythms = []
+
+for x in range(numPlaybackTimes):
+    rhythm_value = [float(input("\nHow long is the {}. note of the {}?".format(x+1, numPlaybackTimes)))]
+    playback_rhythms = playback_rhythms + rhythm_value
+    print("-> Your rhythm:", playback_rhythms)
+
+playback_bpm = 60/int(input("\nAt how many BPM should your rhythm be played?"))
+
+for x in range(numPlaybackTimes):
     play_obj = wave_obj.play()
-    play_obj.wait_done()
+    time.sleep(playback_rhythms[x]*playback_bpm)
