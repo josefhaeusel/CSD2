@@ -6,7 +6,7 @@ Use one forloop to generate a list with the following indices
 list = []
 for x in range(10):
     y = 10+3*x
-    list = list + [y]
+    list += [y]
     print(list)
 
 
@@ -18,8 +18,9 @@ Use one forloop to generate a list with the following indices
 list = []
 for x in range(10):
     y = 2*x
-    list = list + [y]
+    list += [y]
     print(list)
+
 
 """
 _____________________ Etude 3 _____________________
@@ -29,13 +30,8 @@ Use one forloop to generate a list with the following indices
 
 list = []
 for x in [0,2,4,6,8,10]*10:
-    list = list + [x]
+    list += [x]
     print(list)
-
-
-
-
-    
 
 
 """
@@ -47,7 +43,7 @@ list=[]
 for _ in range(10):
     for x in range(6):
         y = 2*x
-        list = list + [y]
+        list += [y]
     print(list)
 
 
@@ -65,10 +61,7 @@ direction = 1
 
 while len(list) < n*10:
     list.append(i)
-    i += direction *2
+    i += direction*2
     if i == 10 or i == 0:
         direction *= -1
 print(list)
-    
-
-
