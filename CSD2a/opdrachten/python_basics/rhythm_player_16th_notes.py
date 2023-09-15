@@ -4,8 +4,6 @@ import librosa
 
 FILEPATH = "/Users/josef.haeusel/My Drive/Musikdesign/HKU/Unterricht/Python/CSD2_git/CSD2a/opdrachten/python_basics/toycar.wav"
 
-#Sample Length Analysis
-
 
 def inputNoteDurations():
     numPlaybackTimes = int(input("How often do you want the sample to play (int)?   "))
@@ -43,12 +41,6 @@ def input_bpm(default_bpm):
       bpm_input = float(input("Set BPM: "))
     return float(bpm_input)
 
-def deferTimestamps(timestamps, deferTime):
-  deferedTimestamps = []
-  for timestamp in timestamps:
-    deferedTimestamps.append(timestamp+deferTime)
-  return deferedTimestamps
-
 def playbackTimestamps(timestampsSeconds, filepath):
 
     y, sr = librosa.load(filepath)
@@ -77,10 +69,7 @@ noteDurations = inputNoteDurations()
 bpm = input_bpm(default_bpm=60)
 timestamps16th = durationsToSixteenthTimestamps(noteDurations)
 timestampsSeconds = sixteenthTimestampsToSecondTimestamps(timestamps16th, bpm)
-##timestampsSeconds = deferTimestamps(timestampsSeconds, deferTime = 0)
 playbackTimestamps(timestampsSeconds, FILEPATH)
-
-##Find out Length of Sample
 
 
 
