@@ -1,7 +1,15 @@
 import simpleaudio as sa
+import pathlib
 import time
 
-FILEPATH = "/Users/josef.haeusel/My Drive/Musikdesign/HKU/Unterricht/Python/CSD2_git/CSD2a/opdrachten/python_basics/toycar.wav"   
+###Global Variables
+DIR_PATH = pathlib.Path(__file__).parent.resolve()
+SAMPLES_DIR = f'{DIR_PATH}/samples'
+SAMPLES_DICT = {
+   1: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toyhit.wav"),
+   2: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toycar.wav"),
+   3: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toytrain.wav")
+}
 
 def errorFunction(number, checkPositive=False, checkInt=False):
     """
@@ -52,7 +60,7 @@ def inputNoteDurations():
           if errorFunction(duration, checkPositive=True) == "Error":
             continue
           else:
-             duration = int(duration)
+             duration = float(duration)
              break
 
         noteDurations.append(duration)
@@ -93,10 +101,10 @@ def sixteenthTimestampsToSecondTimestamps(sixteenthTimestamps, bpm):
     timestamps.append(timestamp)
   return timestamps
 
-def input_bpm(default_bpm):
+def input_bpm(default_bpm = 60):
   
   """
-  Asks the user to input a BPM. If input is empty, a default bpm (arg1) is used.
+  Asks the user to input a BPM number. If input is empty, a default bpm (arg1) is used.
   
   """
   while True:
@@ -108,46 +116,92 @@ def input_bpm(default_bpm):
     if errorFunction(bpm_input, checkPositive=True) == "Error":
        continue
     else:
-       return float(bpm_input)
-    
-    
+       return float(bpm_input)  
 
-def playbackTimestamps(sample_path, timestampsSeconds):
-
+def inputInstrumentation(timestampsSeconds):
+    
     """
-    Plays a given sample (arg1) in a rhythm-sequence according to a timestamp list in seconds (arg2).
+    Ask user to input a list of instrumentation indexes corresponding to length of timestamps
     
     """
 
-    wave_obj = sa.WaveObject.from_wave_file(sample_path)
-    start_time = time.time()
-
+    instrumentationList = []
     for note, timestamp in enumerate(timestampsSeconds):
+      
+      while True:
+        print(f"What instrument plays the {note+1}. note [{timestamp}] out the sequence {timestampsSeconds}?")
+        instrument_index = input(f"Input Number (1 = Kick, 2 = Snare, 3 = HiHat):\n")
+        if errorFunction(instrument_index, checkInt=True) == "Error" :
+          continue
+        else:
+            instrument_index = int(instrument_index)
+            break
 
-        elapsed_time = time.time() - start_time
+      instrumentationList.append(instrument_index)
+      print("-> Your Instrumentation: ", instrumentationList)
 
-        if elapsed_time < timestamp:
-            time.sleep(timestamp - elapsed_time)
-            elapsed_time = time.time() - start_time
+    return(instrumentationList)
 
-        print(f"Playing note {note+1}. Elapsed time: {elapsed_time:.3f}")
-        play_obj = wave_obj.play()
+def makeEventList(timestampsSeconds, instrumentationList):
+   
+   """
+   Format corresponding lists of timestamps and instruments into a list of events (dicts).
+   
+   """
 
-        if note+1 == len(timestampsSeconds):
-            play_obj.wait_done()
+   if len(timestampsSeconds) != len(instrumentationList):
+      print("The two lists do not have the same length")
+      raise ValueError("Lists must have the same length")
+   
+   event_list = []
 
-    print("\nPlayback finished.\n")
+   for n in range(len(timestampsSeconds)):
+      event = {}
+      event['timestamp'] = timestampsSeconds[n]
+      event['instrument'] = instrumentationList[n]
+      event_list.append(event)
+    
+   def getTimestamp(event):
+      return event['timestamp']
+   
+   event_list.sort(key=getTimestamp)
+   
+   return event_list
 
+def eventHandler(event_list, samples_dict):
+   """
+   Plays an event_list with keys 'timestamp' and 'instrument'.
+   Samples_dict provides simpleaudio-based WaveObjects (indeced from 0 to number of instruments).
 
+   """
 
+   start_time = time.time()
+
+   for n, event in enumerate(event_list):
+      
+      elapsed_time = time.time() - start_time
+
+      if elapsed_time < event['timestamp']:
+          time.sleep(event['timestamp'] - elapsed_time)
+          elapsed_time = time.time() - start_time
+
+      print(f"Playing Event {n+1}.      Instrument: {event['instrument']}.      Elapsed time: {elapsed_time:.3f}")
+      play_obj = samples_dict[event['instrument']].play()
+
+      if n+1 == len(event_list):
+          play_obj.wait_done()
+
+   print("\nPlayback finished.\n")
+   
+   
 def main():
   noteDurations = inputNoteDurations()
-  bpm = input_bpm(default_bpm=60)
+  bpm = input_bpm()
   timestamps16th = durationsToSixteenthTimestamps(noteDurations)
   timestampsSeconds = sixteenthTimestampsToSecondTimestamps(timestamps16th, bpm)
-  playbackTimestamps(FILEPATH,timestampsSeconds)
+  instrumentationList = inputInstrumentation(timestampsSeconds)
+  eventList = makeEventList(timestampsSeconds, instrumentationList)
+  eventHandler(eventList, SAMPLES_DICT)
 
 if __name__ == "__main__":
   main()
-
-
