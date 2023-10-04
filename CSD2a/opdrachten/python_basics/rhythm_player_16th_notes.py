@@ -130,7 +130,7 @@ def inputInstrumentation(timestampsSeconds):
       
       while True:
         print(f"What instrument plays the {note+1}. note [{timestamp}] out the sequence {timestampsSeconds}?")
-        instrument_index = input(f"Input Number (1 = Kick, 2 = Snare, 3 = HiHat):\n")
+        instrument_index = input(f"Input Number (1 = Toyhit, 2 = Toycar, 3 = Toytrain):\n")
         if errorFunction(instrument_index, checkInt=True) == "Error" :
           continue
         else:
@@ -168,31 +168,54 @@ def makeEventList(timestampsSeconds, instrumentationList):
    
    return event_list
 
-def eventHandler(event_list, samples_dict):
+def inputLooptimes(default_times = 4):
+
+  """
+  Asks the user to input the number of loops to play back a sequence. If input is empty, a default value (arg1) is used.
+  
+  """
+  if type(default_times) != int:
+     raise ValueError("default_times (arg1) has to be an integer")
+
+  while True:
+
+    looptimes_input = input(f"Set number of loops or press Enter for default (= {default_times} loops):   \n")
+    if looptimes_input == "":
+      return default_times
+    
+    if errorFunction(looptimes_input, checkPositive=True, checkInt=True) == "Error":
+       continue
+    else:
+       return int(looptimes_input)
+
+def eventHandler(event_list, samples_dict, num_loops):
    """
    Plays an event_list with keys 'timestamp' and 'instrument'.
    Samples_dict provides simpleaudio-based WaveObjects (indeced from 0 to number of instruments).
 
    """
+   for loop in range(num_loops):
 
-   start_time = time.time()
+    print(f"\nPlaying loop {loop+1} / {num_loops}.")
+    start_time = time.time()
 
-   for n, event in enumerate(event_list):
-      
-      elapsed_time = time.time() - start_time
+    for n, event in enumerate(event_list):
 
-      if elapsed_time < event['timestamp']:
-          time.sleep(event['timestamp'] - elapsed_time)
-          elapsed_time = time.time() - start_time
+        elapsed_time = time.time() - start_time
 
-      print(f"Playing Event {n+1}.      Instrument: {event['instrument']}.      Elapsed time: {elapsed_time:.3f}")
-      play_obj = samples_dict[event['instrument']].play()
+        if elapsed_time < event['timestamp']:
+            time.sleep(event['timestamp'] - elapsed_time)
+            elapsed_time = time.time() - start_time
 
-      if n+1 == len(event_list):
-          play_obj.wait_done()
+        print(f"Playing Event {(n+1):02}.      Instrument: {event['instrument']:02}.      Elapsed time: {elapsed_time:.3f}")
+        play_obj = samples_dict[event['instrument']].play()
+
+        if n+1 == len(event_list):
+            play_obj.wait_done()
 
    print("\nPlayback finished.\n")
    
+
    
 def main():
   noteDurations = inputNoteDurations()
@@ -201,7 +224,8 @@ def main():
   timestampsSeconds = sixteenthTimestampsToSecondTimestamps(timestamps16th, bpm)
   instrumentationList = inputInstrumentation(timestampsSeconds)
   eventList = makeEventList(timestampsSeconds, instrumentationList)
-  eventHandler(eventList, SAMPLES_DICT)
+  loopTimes = inputLooptimes(default_times = 4)
+  eventHandler(eventList, SAMPLES_DICT, loopTimes)
 
 if __name__ == "__main__":
   main()
