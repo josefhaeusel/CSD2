@@ -1,14 +1,13 @@
 import simpleaudio as sa
 import pathlib
 import time
+import multiprocessing
 
-###Global Variables
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
-SAMPLES_DIR = f'{DIR_PATH}/samples'
 SAMPLES_DICT = {
-   1: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toyhit.wav"),
-   2: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toycar.wav"),
-   3: sa.WaveObject.from_wave_file(f"{SAMPLES_DIR}/toytrain.wav")
+   1: sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/toyhit.wav"),
+   2: sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/toycar.wav"),
+   3: sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/toytrain.wav")
 }
 
 def errorFunction(number, checkPositive=False, checkInt=False):
@@ -34,6 +33,25 @@ def errorFunction(number, checkPositive=False, checkInt=False):
 
     return number
 
+def inputNumSequences(default_num = 3):
+  """
+  Asks the user to input the number of sequences to enter, to be played back simultaneously. If input is empty, a default value (arg1) is used.
+  
+  """
+  if type(default_num) != int:
+     raise ValueError("default_times (arg1) has to be an integer")
+
+  while True:
+
+    numSequences_input = input(f"\nHow many sequences do you want to enter, to be played back simultaneously? Press Enter for default (= {default_num}):   \n")
+    if numSequences_input == "":
+      return default_num
+    
+    if errorFunction(numSequences_input, checkPositive=True, checkInt=True) == "Error":
+       continue
+    else:
+       return int(numSequences_input)
+
 def inputNoteDurations():
     
     """
@@ -44,7 +62,7 @@ def inputNoteDurations():
     """
 
     while True:
-      numPlaybackTimes = input("How often do you want the sample to play (int)?   ")
+      numPlaybackTimes = input("How many notes does your sequence have (int)?   ")
       if errorFunction(numPlaybackTimes, checkPositive=True, checkInt=True) == "Error":
          continue
       else:
@@ -64,9 +82,81 @@ def inputNoteDurations():
              break
 
         noteDurations.append(duration)
-        print("-> Your rhythm: ", noteDurations)
+        print("-> Your rhythm: \n", noteDurations)
       
     return noteDurations
+
+def inputLooptimes(default_times = 4):
+
+  """
+  Asks the user to input the number of loops to play back a sequence. If input is empty, a default value (arg1) is used.
+  
+  """
+  if type(default_times) != int:
+     raise ValueError("default_times (arg1) has to be an integer")
+
+  while True:
+
+    looptimes_input = input(f"\nSet number of loops or press Enter for default (= {default_times} loops):   \n")
+    if looptimes_input == "":
+      return default_times
+    
+    if errorFunction(looptimes_input, checkPositive=True, checkInt=True) == "Error":
+       continue
+    else:
+       return int(looptimes_input)
+
+def inputBpm(default_bpm = 60):
+  
+  """
+  Asks the user to input a BPM number. If input is empty, a default bpm (arg1) is used.
+  
+  """
+
+  while True:
+
+    bpm_input = input(f"\nSet BPM or press Enter for default ({default_bpm:.2f} BPM):   \n")
+    if bpm_input == "":
+      return default_bpm
+    
+    if errorFunction(bpm_input, checkPositive=True) == "Error":
+       continue
+    else:
+       return float(bpm_input)  
+
+def inputInstrumentation(sequence, samples_dict):
+    
+    """
+    Ask user to input a list of instrumentation indexes corresponding to a given sequence.
+    
+    """
+    #TODO Correspond to existing sample dict
+
+    if type(sequence) != list:
+       raise ValueError("Input sequence (arg1) has to be a list.")
+
+    instrumentationList = []
+    for note, timestamp in enumerate(sequence):
+      
+      while True:
+        print(f"What instrument plays the {note+1}. note [{timestamp}] of sequence {sequence}?")
+        instrument_index = input(f"Input Number (1 = Toyhit, 2 = Toycar, 3 = Toytrain):\n")
+
+        if errorFunction(instrument_index, checkInt=True, checkPositive=True) == "Error":
+          continue
+        
+        if int(instrument_index) > len(samples_dict):
+           print(f"ERROR: Maximum Input Number is {len(samples_dict)}.")
+           continue
+        
+        else:
+            instrument_index = int(instrument_index)
+            break
+
+      instrumentationList.append(instrument_index)
+      print("-> Your Instrumentation: \n", instrumentationList)
+
+    return(instrumentationList)
 
 def durationsToSixteenthTimestamps(noteDurations):
   
@@ -83,6 +173,7 @@ def durationsToSixteenthTimestamps(noteDurations):
     sixteenth = note_length * 4
     timestamps.append(sixteenth + timestamps[-1])
   timestamps.pop()
+
   return timestamps
 
 def sixteenthTimestampsToSecondTimestamps(sixteenthTimestamps, bpm):
@@ -100,47 +191,6 @@ def sixteenthTimestampsToSecondTimestamps(sixteenthTimestamps, bpm):
     timestamp = timestamp/4*(60/bpm)
     timestamps.append(timestamp)
   return timestamps
-
-def input_bpm(default_bpm = 60):
-  
-  """
-  Asks the user to input a BPM number. If input is empty, a default bpm (arg1) is used.
-  
-  """
-  while True:
-
-    bpm_input = input(f"Set BPM or press Enter for default ({default_bpm:.2f} BPM):   \n")
-    if bpm_input == "":
-      return default_bpm
-    
-    if errorFunction(bpm_input, checkPositive=True) == "Error":
-       continue
-    else:
-       return float(bpm_input)  
-
-def inputInstrumentation(timestampsSeconds):
-    
-    """
-    Ask user to input a list of instrumentation indexes corresponding to length of timestamps
-    
-    """
-
-    instrumentationList = []
-    for note, timestamp in enumerate(timestampsSeconds):
-      
-      while True:
-        print(f"What instrument plays the {note+1}. note [{timestamp}] out the sequence {timestampsSeconds}?")
-        instrument_index = input(f"Input Number (1 = Toyhit, 2 = Toycar, 3 = Toytrain):\n")
-        if errorFunction(instrument_index, checkInt=True) == "Error" :
-          continue
-        else:
-            instrument_index = int(instrument_index)
-            break
-
-      instrumentationList.append(instrument_index)
-      print("-> Your Instrumentation: ", instrumentationList)
-
-    return(instrumentationList)
 
 def makeEventList(timestampsSeconds, instrumentationList):
    
@@ -168,64 +218,112 @@ def makeEventList(timestampsSeconds, instrumentationList):
    
    return event_list
 
-def inputLooptimes(default_times = 4):
+def multiprocessEventHandler(event_lists, loop_times_lists, samples_dict, sequenceIndex = 1):
+    """
+    Takes a list of event_lists (arg1) and loop_times (arg2) as input and plays back the one indicated by sequenceIndex (arg4, starts at 1)
+    with event_list keys 'timestamp' and 'instrument'. Suited for Multiprocessing application.
+    Samples_dict provides simpleaudio-based WaveObjects (indeced from 0 to number of instruments).
 
-  """
-  Asks the user to input the number of loops to play back a sequence. If input is empty, a default value (arg1) is used.
-  
-  """
-  if type(default_times) != int:
-     raise ValueError("default_times (arg1) has to be an integer")
-
-  while True:
-
-    looptimes_input = input(f"Set number of loops or press Enter for default (= {default_times} loops):   \n")
-    if looptimes_input == "":
-      return default_times
+    """
+    if sequenceIndex < 0:
+       raise ValueError("sequenceIndexes start at 0")
     
-    if errorFunction(looptimes_input, checkPositive=True, checkInt=True) == "Error":
-       continue
-    else:
-       return int(looptimes_input)
+    if type(event_lists) != list:
+       raise ValueError("First argument has to be a list of event lists, even if it's one event list.")
+    
+    if type(loop_times_lists) != list:
+       raise ValueError("Second argument has to be a list of integers.")
+    
+    if len(event_lists) != len(loop_times_lists):
+       raise ValueError("event_lists and loop_times_lists must have the same length.")
+    
 
-def eventHandler(event_list, samples_dict, num_loops):
-   """
-   Plays an event_list with keys 'timestamp' and 'instrument'.
-   Samples_dict provides simpleaudio-based WaveObjects (indeced from 0 to number of instruments).
-
-   """
-   for loop in range(num_loops):
-
-    print(f"\nPlaying loop {loop+1} / {num_loops}.")
+    event_list = event_lists[sequenceIndex]
+    num_loops = loop_times_lists[sequenceIndex]
+    length_loop = len(event_list)/num_loops
     start_time = time.time()
 
     for n, event in enumerate(event_list):
 
-        elapsed_time = time.time() - start_time
+      current_event = int((n%length_loop)+1)
+      elapsed_time = time.time() - start_time
 
-        if elapsed_time < event['timestamp']:
-            time.sleep(event['timestamp'] - elapsed_time)
-            elapsed_time = time.time() - start_time
+      if elapsed_time < event['timestamp']:
+          time.sleep(event['timestamp'] - elapsed_time)
+          elapsed_time = time.time() - start_time
 
-        print(f"Playing Event {(n+1):02}.      Instrument: {event['instrument']:02}.      Elapsed time: {elapsed_time:.3f}")
-        play_obj = samples_dict[event['instrument']].play()
+      print(f"Sequence {sequenceIndex+1}    Playing Event: {current_event:03}.      Instrument: {event['instrument']:02}.      Elapsed time: {elapsed_time:.3f}")
+      play_obj = samples_dict[event['instrument']].play()
 
-        if n+1 == len(event_list):
-            play_obj.wait_done()
+      if n+1 == len(event_list):
+          play_obj.wait_done()
 
-   print("\nPlayback finished.\n")
-   
+    print(f"\nSequence {sequenceIndex+1}:   Playback finished.\n")
 
-   
-def main():
-  noteDurations = inputNoteDurations()
-  bpm = input_bpm()
-  timestamps16th = durationsToSixteenthTimestamps(noteDurations)
-  timestampsSeconds = sixteenthTimestampsToSecondTimestamps(timestamps16th, bpm)
-  instrumentationList = inputInstrumentation(timestampsSeconds)
-  eventList = makeEventList(timestampsSeconds, instrumentationList)
-  loopTimes = inputLooptimes(default_times = 4)
-  eventHandler(eventList, SAMPLES_DICT, loopTimes)
+
+def createSequences():
+
+  """
+  Calls several input functions, that prompt user to design rhythmical sequences.
+  Processes noteDurations into timestamps based on bpm.
+  Creates event lists with keys for 'timestamp' and 'instrument'.
+  Returns list of event-lists and loop-times.
+
+  """
+
+  sequencesEventLists = []
+  sequencesLoopTimes = []
+
+  numSequences = inputNumSequences(default_num=3)
+  
+  for sequence in range(numSequences):
+    print(f"\nCreating {sequence+1}. of {numSequences} Sequences:\n")
+
+    noteDurations = inputNoteDurations()
+    instrumentationList = inputInstrumentation(noteDurations, SAMPLES_DICT)
+
+    loopTimes = inputLooptimes(default_times = 4)
+    noteDurations *= loopTimes
+    instrumentationList *= loopTimes
+
+    bpm = inputBpm(default_bpm=60)
+
+    timestamps16th = durationsToSixteenthTimestamps(noteDurations)
+    timestampsSeconds = sixteenthTimestampsToSecondTimestamps(timestamps16th, bpm)
+
+    eventList = makeEventList(timestampsSeconds, instrumentationList)
+    sequencesEventLists.append(eventList)
+    sequencesLoopTimes.append(loopTimes)
+
+    print(f"\nFinished creating {sequence+1}. of {numSequences} Sequences.\n")
+  
+  return sequencesEventLists, sequencesLoopTimes
+
+def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, samples_dict):
+
+  """
+  Initializes multiprocessEventHandler() processes based on the number of input sequences.
+  
+  """
+
+  numSequences = len(sequencesLoopTimes)
+  processes = []
+
+  for process_num in range(numSequences):
+      process = multiprocessing.Process(target=multiprocessEventHandler, args=(sequencesEventLists, sequencesLoopTimes, samples_dict, process_num))
+      processes.append(process)
+
+  print(f"\nMultiprocessing Playback started.\n")
+
+  for process in processes:
+      process.start()
+
+  for process in processes:
+      process.join()
+
+
 
 if __name__ == "__main__":
-  main()
+
+  sequencesEventLists, sequencesLoopTimes = createSequences()
+  multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, SAMPLES_DICT)
