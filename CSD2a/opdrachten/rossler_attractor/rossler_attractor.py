@@ -130,7 +130,6 @@ Section 2 - Sonification of Data
 """
 
 
-
 def DataTresholdConditioning(AxisData, tresholds = [0.5,0.5,0.2]):
     
     rhythmAxisData = []
@@ -159,8 +158,7 @@ def DataTresholdConditioning(AxisData, tresholds = [0.5,0.5,0.2]):
     return rhythmAxisData
         
 
-        
-
+#TODO Process Rhythm List to Timestamps and adjust in Playback
 """ 
 def NotesToTimestamps(steps_per_second, AxisData):
 
@@ -186,8 +184,6 @@ def simplePlayback(Axis, samples_dict, AxisIndex = "X", sleep_time = 0.05):
       
       elapsed_time = time.time() - start_time  
       current_event = int((n)+1)
-
-      #print(f"{AxisIndex} Count  {n}")
 
       if event == 1:
         times_played = times_played+1
@@ -231,9 +227,9 @@ def AudioMain(AxisData, TimeSleep):
 
 
 if __name__ == "__main__":
-    X_Axis, Y_Axis, Z_Axis   =   DataMain(start_values = [0.1,0.1,0.1],
-                              parameters = {'a': 0.31, 'b': 0.18, 'c': 6},
-                              steps= 100000, step_size = 0.01 )
+    X_Axis, Y_Axis, Z_Axis   =   DataMain(  start_values = [0.1,0.1,0.1],
+                                            parameters = {'a': 0.31, 'b': 0.18, 'c': 6},
+                                            steps= 100000, step_size = 0.01     )
     
     AxisData = [X_Axis, Y_Axis, Z_Axis]
 
