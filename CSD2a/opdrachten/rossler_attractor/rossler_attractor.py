@@ -72,6 +72,7 @@ def normalizeData(xx, yy, zz):
     for axis in data:
         min_val = min(axis)
         max_val = max(axis)
+
         if max_val != min_val:  # Check if max and min are not equal to avoid division by zero
             scaled_axis = [((x - min_val) / (max_val - min_val)) for x in axis]
         else:
@@ -80,9 +81,6 @@ def normalizeData(xx, yy, zz):
 
     print("\nFinished Normalizing\n")
     return normalized_data[0], normalized_data[1], normalized_data[2]
-
-
-
 
 def DataMain(start_values = [0.1,0.1,0.1], parameters = {'a': 0.3, 'b': 0.21, 'c': 5}, steps= 10000, step_size = 0.01):
 
@@ -117,7 +115,7 @@ def DataTresholdConditioning(AxisData, tresholds = [0.5, 0.5, 0.2]):
                 conditioned_axis.append(0)
                 last_val = val
 
-            if last_val < treshold and val >= treshold or last_val > treshold and val <= treshold:
+            if last_val < treshold and val >= treshold:
                 conditioned_axis.append(1)
             else:
                 conditioned_axis.append(0)
@@ -263,7 +261,7 @@ def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
     
     """
 
-    fig = plt.figure("Plot",figsize=(8, 6))
+    fig = plt.figure("Plot",figsize=(6, 6))
     ax = fig.add_subplot(111, projection='3d')
     plt.gca().patch.set_facecolor('grey')
 
@@ -346,20 +344,35 @@ yy = np.sin(xx)
 zz = np.cos(xx)
 anim = plotAnimatedData(xx, yy, zz)"""
 
+
+
+
+
+
+
 if __name__ == "__main__":
 
     X_Axis, Y_Axis, Z_Axis   =   DataMain(  start_values = [0.1,0.1,0.1],
-                                            parameters = {'a': 0.29, 'b': 0.14, 'c': 20},
-                                            steps= 100000, step_size = 0.01     )
+                                            parameters = {'a': 0.29, 'b': 0.14, 'c': 14},
+                                            steps= 50000, step_size = 0.01     )
     
+    
+    #Interesting Parameters
+    # {'a': 0.2, 'b': 0.2, 'c': 14}     -> Better Method 1
+    # {'a': 0.29, 'b': 0.14, 'c': 14}   -> Better Method 2
+
     plotData(X_Axis, Y_Axis, Z_Axis)
-
-
 
     AxisData = [X_Axis, Y_Axis, Z_Axis]
 
+    ###  Method 1 - Threshold Conditioning
+    AudioMain(DataTresholdConditioning, AxisData, Tresholds = [0.5, 0.5, 0.1], StepsPerSecond = 2500)
 
-    AudioMain(DataGradientConditioning, AxisData, Tresholds = [0, 0, 0], StepsPerSecond = 3000)
-    
+    ###  Method 2 - Gradient Conditioning
+    AudioMain(DataGradientConditioning, AxisData, Tresholds = [0, 0, 0], StepsPerSecond = 2000)
+
+
+
+
     
 
