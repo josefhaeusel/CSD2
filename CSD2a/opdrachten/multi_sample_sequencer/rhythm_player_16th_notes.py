@@ -309,7 +309,7 @@ def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, sam
   numSequences = len(sequencesLoopTimes)
   processes = []
 
-  for process_num in range(numSequences-1):
+  for process_num in range(numSequences):
       process = multiprocessing.Process(target=multiprocessEventHandler, args=(sequencesEventLists, sequencesLoopTimes, samples_dict, process_num))
       processes.append(process)
 

@@ -1,17 +1,20 @@
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import simpleaudio as sa
 import pathlib
 import time
 import multiprocessing
 
+
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
 SAMPLES_DICT = {
-   "X": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/low.wav"),
-   "Y": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/mid.wav"),
-   "Z": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/high.wav")
+   "X": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/bleepC4.wav"),
+   "Y": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/hihat.wav"),
+   "Z": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/kick.wav")
 }
 
 """
@@ -78,6 +81,181 @@ def normalizeData(xx, yy, zz):
     print("\nFinished Normalizing\n")
     return normalized_data[0], normalized_data[1], normalized_data[2]
 
+
+
+
+def DataMain(start_values = [0.1,0.1,0.1], parameters = {'a': 0.3, 'b': 0.21, 'c': 5}, steps= 10000, step_size = 0.01):
+
+    xx, yy, zz = calculation(rossler_attractor, start_values, parameters, steps, step_size)
+    xx_norm, yy_norm, zz_norm = normalizeData(xx, yy, zz)
+
+    return xx_norm, yy_norm, zz_norm
+
+
+
+
+"""
+
+Section 2 - Sonification of Data
+-------------------------------------------------
+
+"""
+
+
+def DataTresholdConditioning(AxisData, tresholds = [0.5, 0.5, 0.2]):
+    
+    rhythmAxisData = []
+
+    for i_axis, axis in enumerate(AxisData):
+
+        treshold = tresholds[i_axis]
+        conditioned_axis = []
+
+        for i, val in enumerate(axis):
+
+            if i == 0:
+                conditioned_axis.append(0)
+                last_val = val
+
+            if last_val < treshold and val >= treshold or last_val > treshold and val <= treshold:
+                conditioned_axis.append(1)
+            else:
+                conditioned_axis.append(0)
+
+            last_val = val
+
+        rhythmAxisData.append(conditioned_axis)
+    
+    return rhythmAxisData
+
+def DataGradientConditioning(AxisData, gradient_tresholds = [0.0, 0.0, 0.0]):
+    
+    rhythmAxisData = []
+
+    for i_axis, axis in enumerate(AxisData):
+
+
+        treshold = gradient_tresholds[i_axis]
+        conditioned_axis = []
+
+        for i, val in enumerate(axis):
+            
+            if i == 0:
+                conditioned_axis.append(0)
+                last_val = 0
+                last_gradient = 0
+                
+            
+            gradient = val - last_val
+
+            if last_gradient < treshold and gradient >= treshold:
+                conditioned_axis.append(1)
+            else:
+                conditioned_axis.append(0)
+
+            last_val = val
+            last_gradient = gradient
+
+        conditioned_axis
+
+        rhythmAxisData.append(conditioned_axis)
+    
+    return rhythmAxisData
+
+def BinaryNotesToTimestamps(AxisData, steps_per_second = 3000):
+
+    timestampsAxisList = []
+
+    for axis in AxisData:
+        
+        timestamps = [0]
+        last_timestamp = (len(axis)-1)*(1/steps_per_second)
+        print(last_timestamp)
+
+        for i, note in enumerate(axis):
+            time = i*(1/steps_per_second)
+            if note == 1:
+                timestamps.append(time)
+            
+            ## Add empty timestamp, to make sure, every axis waits till last step before looping, to stay synchronized
+            if i+1 == (len(axis)):
+                timestamps.append(last_timestamp)
+            
+
+        
+        timestamps.pop(0)
+        timestampsAxisList.append(timestamps)
+    
+    return timestampsAxisList
+
+def timestampPlayback(timestampsAxis, samples_dict, AxisIndex = "X", DisplaySign = "+++"):
+
+    if AxisIndex == "X":
+        displayIndex = f"{DisplaySign}      "
+    if AxisIndex == "Y":
+        displayIndex = f"   {DisplaySign}   "
+    if AxisIndex == "Z":
+        displayIndex = f"      {DisplaySign}"
+
+    sample = samples_dict.get(AxisIndex)
+    start_time = time.time()
+    end_time = timestampsAxis.pop(-1)
+
+    print(f"Playing Axis {AxisIndex}.")
+
+    for n, timestamp in enumerate(timestampsAxis):
+    
+        elapsed_time = time.time() - start_time
+        current_event = int(n+1)
+
+        if elapsed_time < timestamp:
+            time.sleep(timestamp - elapsed_time)
+            elapsed_time = time.time() - start_time
+            print(f"Axis {AxisIndex} {displayIndex}        Playing Note {current_event:04} of {len(timestampsAxis):04}.       Elapsed time: {elapsed_time:.2f}       Latency: {(elapsed_time-timestamp)*1000:.2f} ms")
+            sample.play()
+
+        if n+1 == len(timestampsAxis) and elapsed_time < end_time:
+            time.sleep(end_time - elapsed_time)
+    
+    elapsed_time = time.time() - start_time
+    print(f"\nAxis {AxisIndex}:   Playback finished at {elapsed_time}.\n")
+               
+def multiprocessingPlayback(AxisData):
+
+    """
+    Initializes multiprocessEventHandler() processes based on the number of input sequences.
+  
+    """
+
+    processes = []
+    axis_indexes = ["X", "Y", "Z"]
+
+    for i, axis in enumerate(AxisData):
+        process = multiprocessing.Process(target=timestampPlayback, args=(axis, SAMPLES_DICT, axis_indexes[i]))
+        processes.append(process)
+
+    print(f"\nMultiprocessing Playback started.\n")
+
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
+
+def AudioMain(NoteConditioning, AxisData, Tresholds = [0.5,0.5,0.2], StepsPerSecond = 5000):
+    binaryRhythmAxisData = NoteConditioning(AxisData, Tresholds)
+    timestampsAxisData = BinaryNotesToTimestamps(binaryRhythmAxisData, StepsPerSecond)
+    print(timestampsAxisData)
+    multiprocessingPlayback(timestampsAxisData)
+
+
+"""
+
+Section 3 - Plotting and Animation
+-------------------------------------------------
+
+"""
+
 def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
 
     """"
@@ -85,7 +263,7 @@ def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
     
     """
 
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure("Plot",figsize=(8, 6))
     ax = fig.add_subplot(111, projection='3d')
     plt.gca().patch.set_facecolor('grey')
 
@@ -114,126 +292,74 @@ def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
     plt.ion()
     plt.show()
 
-def DataMain(start_values = [0.1,0.1,0.1], parameters = {'a': 0.3, 'b': 0.21, 'c': 5}, steps= 10000, step_size = 0.01):
-    xx, yy, zz = calculation(rossler_attractor, start_values, parameters, steps, step_size)
-    
-    xx_norm, yy_norm, zz_norm = normalizeData(xx, yy, zz)
-    plotData(xx_norm, yy_norm, zz_norm)
-
-    return xx_norm, yy_norm, zz_norm
-
-"""
-
-Section 2 - Sonification of Data
--------------------------------------------------
-
-"""
+def plotAnimatedData(xx, yy, zz, plot_angle=30, min_display=0, max_display=1):
 
 
-def DataTresholdConditioning(AxisData, tresholds = [0.5,0.5,0.2]):
-    
-    rhythmAxisData = []
+    fig = plt.figure("Animation", figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.patch.set_facecolor('grey')
 
-    for i_axis, axis in enumerate(AxisData):
+    line, = ax.plot([], [], [], '-', color='orange', lw=0.1)
 
-        treshold = tresholds[i_axis]
-        conditioned_axis = []
+    ax.set_xlabel('X Axis')
+    ax.set_ylabel('Y Axis')
+    ax.set_zlabel('Z Axis')
 
-        for i, val in enumerate(axis):
+    ax.set_xlim(min_display, max_display)
+    ax.set_ylim(min_display, max_display)
+    ax.set_zlim(min_display, max_display)
 
-            if i == 0:
-                conditioned_axis.append(0)
-                last_val = val
+    ax.set_xticks(np.linspace(min_display, max_display, 5))
+    ax.set_yticks(np.linspace(min_display, max_display, 5))
+    ax.set_zticks(np.linspace(min_display, max_display, 5))
 
-            else:
-                if last_val < treshold and val >= treshold or last_val > treshold and val <= treshold:
-                    conditioned_axis.append(1)
-                else:
-                    conditioned_axis.append(0)
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+    ax.grid(True)
 
-                last_val = val
+    def update_point(num, line, point):
+        x = xx[num]
+        y = yy[num]
+        z = zz[num]
+        line.set_data(x, y)
+        line.set_3d_properties(z)
+        point.set_3d_properties(z)  # Update the Z position of the point
+        return line, point
 
-        rhythmAxisData.append(conditioned_axis)
-    
-    return rhythmAxisData
-        
+    ax.view_init(azim=plot_angle)
 
-#TODO Process Rhythm List to Timestamps and adjust in Playback
-""" 
-def NotesToTimestamps(steps_per_second, AxisData):
+    # Create the animated point (sphere) at the starting position
+    point, = ax.plot([xx[0]], [yy[0]], [zz[0]], 'ro', markersize=6)
 
-    timestampsAxisList = []
+    # Set up the animation and store it in the "anim" variable
+    anim = animation.FuncAnimation(fig, update_point, frames=len(xx), fargs=(line, point),
+                                   interval=50, repeat=True)
 
-   for axis in AxisData:
-        for i, note in enumerate(axis):
-            axis[i] = note
+    plt.show()  # Display the animation
 
+    return anim
 
-        timestampsAxisList.append()"""
-
-
-def simplePlayback(Axis, samples_dict, AxisIndex = "X", sleep_time = 0.05):
-
-    start_time = time.time()
-    sample = samples_dict.get(AxisIndex)
-    times_played = 0
-
-    print(f"Playing Axis {AxisIndex}.")
-
-    for n, event in enumerate(Axis):
-      
-      elapsed_time = time.time() - start_time  
-      current_event = int((n)+1)
-
-      if event == 1:
-        times_played = times_played+1
-        print(f"Axis {AxisIndex}    Playing Step: {current_event:03}.    Elapsed time: {elapsed_time:.3f}   Times Played: {times_played}")
-        play_obj = sample.play()
-
-        if n+1 == len(Axis):
-            play_obj.wait_done()
-      
-      time.sleep(sleep_time)
-
-
-    print(f"\Axis {AxisIndex}:   Playback finished.\n")
-
-
-def multiprocessingPlayback(AxisData, TimeSleep):
-    """
-    Initializes multiprocessEventHandler() processes based on the number of input sequences.
-  
-    """
-
-    processes = []
-    axis_indexes = ["X", "Y", "Z"]
-
-    for i, axis in enumerate(AxisData):
-        process = multiprocessing.Process(target=simplePlayback, args=(axis, SAMPLES_DICT, axis_indexes[i], TimeSleep))
-        processes.append(process)
-
-    print(f"\nMultiprocessing Playback started.\n")
-
-    for process in processes:
-        process.start()
-
-    for process in processes:
-        process.join()
-
-def AudioMain(AxisData, TimeSleep):
-    rhythmAxisData = DataTresholdConditioning(AxisData)
-    multiprocessingPlayback(rhythmAxisData, TimeSleep)
-
-
+#Example of Animation Usage
+"""xx = np.linspace(0, 10, 100)
+yy = np.sin(xx)
+zz = np.cos(xx)
+anim = plotAnimatedData(xx, yy, zz)"""
 
 if __name__ == "__main__":
+
     X_Axis, Y_Axis, Z_Axis   =   DataMain(  start_values = [0.1,0.1,0.1],
-                                            parameters = {'a': 0.31, 'b': 0.18, 'c': 6},
+                                            parameters = {'a': 0.29, 'b': 0.14, 'c': 20},
                                             steps= 100000, step_size = 0.01     )
     
+    plotData(X_Axis, Y_Axis, Z_Axis)
+
+
+
     AxisData = [X_Axis, Y_Axis, Z_Axis]
 
-    AudioMain(AxisData, 0.001)
+
+    AudioMain(DataGradientConditioning, AxisData, Tresholds = [0, 0, 0], StepsPerSecond = 3000)
     
     
 

@@ -1,0 +1,57 @@
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+
+def plotAnimatedData(xx, yy, zz, plot_angle=30, min_display=0, max_display=1):
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.patch.set_facecolor('grey')
+
+    line, = ax.plot([], [], [], '-', color='orange', lw=0.1)
+
+    ax.set_xlabel('X Axis')
+    ax.set_ylabel('Y Axis')
+    ax.set_zlabel('Z Axis')
+
+    ax.set_xlim(min_display, max_display)
+    ax.set_ylim(min_display, max_display)
+    ax.set_zlim(min_display, max_display)
+
+    ax.set_xticks(np.linspace(min_display, max_display, 5))
+    ax.set_yticks(np.linspace(min_display, max_display, 5))
+    ax.set_zticks(np.linspace(min_display, max_display, 5))
+
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+    ax.grid(True)
+
+    def update_point(num, line, point):
+        x = xx[num]
+        y = yy[num]
+        z = zz[num]
+        line.set_data(x, y)
+        line.set_3d_properties(z)
+        point.set_3d_properties(z)  # Update the Z position of the point
+        return line, point
+
+    ax.view_init(azim=plot_angle)
+
+    # Create the animated point (sphere) at the starting position
+    point, = ax.plot([xx[0]], [yy[0]], [zz[0]], 'ro', markersize=6)
+
+    # Set up the animation and store it in the "anim" variable
+    anim = animation.FuncAnimation(fig, update_point, frames=len(xx), fargs=(line, point),
+                                   interval=50, repeat=True)
+
+    plt.show()  # Display the animation
+
+    return anim
+
+# Example usage:
+xx = np.linspace(0, 10, 100)
+yy = np.sin(xx)
+zz = np.cos(xx)
+anim = plotAnimatedData(xx, yy, zz)
