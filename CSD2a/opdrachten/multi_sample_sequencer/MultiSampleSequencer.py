@@ -327,6 +327,12 @@ def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, sam
 
 def MIDI_Writer(sequencesEventLists):
 
+   """
+   Created MIDI Files out of a list of sequences. Saves them as individual tracks / files.
+   Returns True / False message, conditioning the continuation of the loop of further sequence creation.
+   
+   """
+
    prompt = input("\nDo you want to save these sequences as MIDI files? [Y / N]\n")
 
    if prompt in "Nn":
@@ -339,7 +345,6 @@ def MIDI_Writer(sequencesEventLists):
    
    if prompt in "Yy":
       
-
       #Unique Filenaming
       current_time = datetime.datetime.now()
       filetag = current_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -359,11 +364,11 @@ def MIDI_Writer(sequencesEventLists):
          with open(midi_filepath, "wb") as output_file:
             midiFile.write_file(output_file)
 
-      print(f"\nSaved {len(sequencesEventLists)} MIDI Files successfully!\nDirectory: {midi_directory}\n")
+      print(f"\nSaved {len(sequencesEventLists)} MIDI Files successfully!\nDirectory: {midi_directory}")
 
       prompt = input("\nDo you want to create more sequences? [Y / N]\n")
       if prompt in "Nn":
-         print("\nAlright, have fun with your sequences! Goodbye.\n")
+         print("\nAlright, then have fun with your sequences! Goodbye.\n")
          return False
       if prompt in "Yy":
          return True
