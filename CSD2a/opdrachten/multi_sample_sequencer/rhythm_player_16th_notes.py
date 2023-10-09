@@ -1,7 +1,9 @@
 import simpleaudio as sa
 import pathlib
 import time
+import datetime
 import multiprocessing
+from midi_writer import MIDIFile, Notes
 
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
 SAMPLES_DICT = {
@@ -299,6 +301,7 @@ def createSequences():
   
   return sequencesEventLists, sequencesLoopTimes
 
+
 def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, samples_dict):
 
   """
@@ -322,8 +325,67 @@ def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, sam
       process.join()
 
 
+def MIDI_Writer(sequencesEventLists):
+
+   prompt = input("\nDo you want to save these sequences as MIDI files? [Y / N]\n")
+
+   if prompt in "Nn":
+      prompt = input("\nDo you want to create new sequences? [Y / N]\n")
+      if prompt in "Nn":
+         print("\nYou don't know, what you are missing.\n")
+         return False
+      if prompt in "Yy":
+         return True
+   
+   if prompt in "Yy":
+      
+
+      #Unique Filenaming
+      current_time = datetime.datetime.now()
+      filetag = current_time.strftime("%Y-%m-%d %H:%M:%S")
+      midi_directory = f"{DIR_PATH}/MIDI_sequences"
+
+      for i, sequence in enumerate(sequencesEventLists):
+
+         midiFile = MIDIFile(1)
+         midiFile.add_tempo(track = 0, tempo = 60, time = 0)
+         midi_filepath = midi_directory + f"sequence_{filetag}_track{i}.mid"
+         
+         for event in sequence:
+            time = event['timestamp']
+            note = event['instrument'] + 52
+            midiFile.add_note(track = 0, channel = 9, pitch = note, time = time, duration = 0.5, volume = 70)
+         
+         with open(midi_filepath, "wb") as output_file:
+            midiFile.write_file(output_file)
+
+      print(f"\nSaved {len(sequencesEventLists)} MIDI Files successfully!\nDirectory: {midi_directory}\n")
+
+      prompt = input("\nDo you want to create more sequences? [Y / N]\n")
+      if prompt in "Nn":
+         print("\nAlright, have fun with your sequences! Goodbye.\n")
+         return False
+      if prompt in "Yy":
+         return True
+
+
 
 if __name__ == "__main__":
   
-  sequencesEventLists, sequencesLoopTimes = createSequences()
-  multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, SAMPLES_DICT)
+   while True: 
+      sequencesEventLists, sequencesLoopTimes = createSequences()
+      multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, SAMPLES_DICT)
+      continue_feedback = MIDI_Writer(sequencesEventLists)
+      
+      if continue_feedback:
+         continue
+      else:
+         break
+
+
+
+
+
+
+
+
