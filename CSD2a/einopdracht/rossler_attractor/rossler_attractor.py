@@ -17,16 +17,38 @@ SAMPLES_DICT = {
    "Z": sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/kick.wav")
 }
 
+
 """
 
-Section 1 - Data Processing of Rossler Attractor
+DESCRIPTION
+----------------
+
+Rhythmical sonification of Rössler Attractor based on Treshold and Gradient Conditioning.
+
+Behold the inquisitive normalization (for the sake of simplicity), altering the 'classical' shape of the attractor.
+
+Plotting realised with Matlab. (Animation work-in-progress; commented out for now)
+Credit to Leo Corte's visualization method https://thebrickinthesky.wordpress.com/2013/02/23/maths-with-python-2-rossler-system/
+
+Feel free to experiment with parameters and the twofold sonification methods in the __main__ function.
+
+
+"""
+
+
+
+
+"""
+
+Section 1 - Data Processing of Rössler Attractor
 -------------------------------------------------
 
 """
 
 def rossler_attractor(x, y, z, parameters = {'a': 0.3, 'b': 0.21, 'c': 5}):
+
     """
-    Equations for three-dimensional Rössler Attractor.
+    Equations for calculation of three-dimensional Rössler Attractor.
     
     """
 
@@ -40,6 +62,7 @@ def rossler_attractor(x, y, z, parameters = {'a': 0.3, 'b': 0.21, 'c': 5}):
     return x_dot, y_dot, z_dot
 
 def calculation(rossler_function, start_values = [0.1,0.1,0.1], parameters = {'a': 0.3, 'b': 0.21, 'c': 5}, steps= 10000, step_size = 0.01):
+    
     """
     Calculates a three-dimensional recursive function.
     
@@ -60,8 +83,9 @@ def calculation(rossler_function, start_values = [0.1,0.1,0.1], parameters = {'a
     return xx, yy, zz
 
 def normalizeData(xx, yy, zz):
+    
     """
-    Normalizes each axis according to its individual min and max value.
+    Normalizes each axis according to its (!) individual (!) min and max value.
     
     """
 
@@ -84,11 +108,16 @@ def normalizeData(xx, yy, zz):
 
 def DataMain(start_values = [0.1,0.1,0.1], parameters = {'a': 0.3, 'b': 0.21, 'c': 5}, steps= 10000, step_size = 0.01):
 
+    """
+    Initializes the the necessary steps for calculating and preparing the sonification data,
+    offering the crucial parameters as arguments.
+    
+    """
+
     xx, yy, zz = calculation(rossler_attractor, start_values, parameters, steps, step_size)
     xx_norm, yy_norm, zz_norm = normalizeData(xx, yy, zz)
 
     return xx_norm, yy_norm, zz_norm
-
 
 
 
@@ -101,6 +130,13 @@ Section 2 - Sonification of Data
 
 
 def DataTresholdConditioning(AxisData, tresholds = [0.5, 0.5, 0.2]):
+
+    """
+    Creates binary rhythmical data [0,0,1,0,1, ...] based on an axis' positive crossing of a treshold value.
+
+    Each axis can be assigned an individual treshold value in the list of arg2.
+    
+    """
     
     rhythmAxisData = []
 
@@ -127,6 +163,13 @@ def DataTresholdConditioning(AxisData, tresholds = [0.5, 0.5, 0.2]):
     return rhythmAxisData
 
 def DataGradientConditioning(AxisData, gradient_tresholds = [0.0, 0.0, 0.0]):
+
+    """
+    Creates binary rhythmical data [0,0,1,0,1, ...] based on an axis gradients positive crossing of a treshold value.
+
+    Each axis can be assigned an individual gradient treshold value in the list of arg2.
+    
+    """
     
     rhythmAxisData = []
 
@@ -162,6 +205,11 @@ def DataGradientConditioning(AxisData, gradient_tresholds = [0.0, 0.0, 0.0]):
 
 def BinaryNotesToTimestamps(AxisData, steps_per_second = 3000):
 
+    """
+    Created timestamps from binary note list based on a given speed, specified in data "steps-per-second" (arg2). 
+    
+    """
+
     timestampsAxisList = []
 
     for axis in AxisData:
@@ -188,6 +236,15 @@ def BinaryNotesToTimestamps(AxisData, steps_per_second = 3000):
 
 def timestampPlayback(timestampsAxis, samples_dict, AxisIndex = "X", DisplaySign = "+++"):
 
+    """
+    Plays back timestamps of an individual axis using the sample (dict in arg2) assigned to the Axisindex (arg3).
+
+    Minimalistic visualizazion in terminal using symbols of arg4.
+
+    Employed in multiprocessing below.
+
+    """
+
     if AxisIndex == "X":
         displayIndex = f"{DisplaySign}      "
     if AxisIndex == "Y":
@@ -210,10 +267,11 @@ def timestampPlayback(timestampsAxis, samples_dict, AxisIndex = "X", DisplaySign
             time.sleep(timestamp - elapsed_time)
             elapsed_time = time.time() - start_time
             print(f"Axis {AxisIndex} {displayIndex}        Playing Note {current_event:04} of {len(timestampsAxis):04}.       Elapsed time: {elapsed_time:.2f}       Latency: {(elapsed_time-timestamp)*1000:.2f} ms")
-            sample.play()
+            play_obj = sample.play()
 
         if n+1 == len(timestampsAxis) and elapsed_time < end_time:
             time.sleep(end_time - elapsed_time)
+            play_obj.wait_done()
     
     elapsed_time = time.time() - start_time
     print(f"\nAxis {AxisIndex}:   Playback finished at {elapsed_time}.\n")
@@ -241,6 +299,10 @@ def multiprocessingPlayback(AxisData):
         process.join()
 
 def AudioMain(NoteConditioning, AxisData, Tresholds = [0.5,0.5,0.2], StepsPerSecond = 5000):
+    """
+    Initializes the necesarry functions and processes for multiprocessing playback based on timestamps derived from axis data from threshold conditioning method.
+    
+    """
     binaryRhythmAxisData = NoteConditioning(AxisData, Tresholds)
     timestampsAxisData = BinaryNotesToTimestamps(binaryRhythmAxisData, StepsPerSecond)
     print(timestampsAxisData)
@@ -289,6 +351,9 @@ def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
     ax.view_init(azim=plot_angle)
     plt.ion()
     plt.show()
+
+"""
+#TODO Animation
 
 def plotAnimatedData(xx, yy, zz, plot_angle=30, min_display=0, max_display=1):
 
@@ -339,12 +404,12 @@ def plotAnimatedData(xx, yy, zz, plot_angle=30, min_display=0, max_display=1):
     return anim
 
 #Example of Animation Usage
-"""xx = np.linspace(0, 10, 100)
+xx = np.linspace(0, 10, 100)
 yy = np.sin(xx)
 zz = np.cos(xx)
-anim = plotAnimatedData(xx, yy, zz)"""
+anim = plotAnimatedData(xx, yy, zz)
 
-
+"""
 
 
 
@@ -362,7 +427,7 @@ if __name__ == "__main__":
     # {'a': 0.29, 'b': 0.14, 'c': 14}   -> Better Method 2
 
     plotData(X_Axis, Y_Axis, Z_Axis)
-
+    
     AxisData = [X_Axis, Y_Axis, Z_Axis]
 
     ###  Method 1 - Threshold Conditioning
