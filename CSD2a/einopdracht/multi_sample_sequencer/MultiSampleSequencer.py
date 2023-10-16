@@ -3,8 +3,9 @@ import pathlib
 import time
 import datetime
 import multiprocessing
-from midi_writer import MIDIFile, Notes
+from midi_writer import MIDIFile
 
+##    Global Variables
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
 SAMPLES_DICT = {
    1: sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/toyhit.wav"),
@@ -12,7 +13,20 @@ SAMPLES_DICT = {
    3: sa.WaveObject.from_wave_file(f"{DIR_PATH}/samples/toytrain.wav")
 }
 
+"""
+
+DESCRIPTION:
+
+Prompts the user (terminal) to create multiple rhythmical sequences, to be played back simultaneously through multiprocessing.
+
+The created sequences be saved as individual one-track MIDI Files.
+
+"""
+
+
+
 def errorFunction(number, checkPositive=False, checkInt=False):
+    
     """
     Checks whether a given number is a valid number, positive and / or integer and returns an "Error" message if not.
 
@@ -36,10 +50,12 @@ def errorFunction(number, checkPositive=False, checkInt=False):
     return number
 
 def inputNumSequences(default_num = 3):
+  
   """
   Asks the user to input the number of sequences to enter, to be played back simultaneously. If input is empty, a default value (arg1) is used.
   
   """
+
   if type(default_num) != int:
      raise ValueError("default_times (arg1) has to be an integer")
 
@@ -132,7 +148,6 @@ def inputInstrumentation(sequence, samples_dict):
     Ask user to input a list of instrumentation indexes corresponding to a given sequence.
     
     """
-    #TODO Correspond to existing sample dict
 
     if type(sequence) != list:
        raise ValueError("Input sequence (arg1) has to be a list.")
@@ -141,7 +156,7 @@ def inputInstrumentation(sequence, samples_dict):
     for note, timestamp in enumerate(sequence):
       
       while True:
-        print(f"What instrument plays the {note+1}. note [{timestamp}] of sequence {sequence}?")
+        print(f"\nWhat instrument plays the {note+1}. note [{timestamp}] of sequence {sequence}?")
         instrument_index = input(f"Input Number (1 = Toyhit, 2 = Toycar, 3 = Toytrain):\n")
 
         if errorFunction(instrument_index, checkInt=True, checkPositive=True) == "Error":
@@ -221,12 +236,14 @@ def makeEventList(timestampsSeconds, instrumentationList):
    return event_list
 
 def multiprocessEventHandler(event_lists, loop_times_lists, samples_dict, sequenceIndex = 1):
+    
     """
     Takes a list of event_lists (arg1) and loop_times (arg2) as input and plays back the one indicated by sequenceIndex (arg4, starts at 1)
     with event_list keys 'timestamp' and 'instrument'. Suited for Multiprocessing application.
     Samples_dict provides simpleaudio-based WaveObjects (indeced from 0 to number of instruments).
 
     """
+
     if sequenceIndex < 0:
        raise ValueError("sequenceIndexes start at 0")
     
@@ -261,7 +278,6 @@ def multiprocessEventHandler(event_lists, loop_times_lists, samples_dict, sequen
           play_obj.wait_done()
 
     print(f"\nSequence {sequenceIndex+1}:   Playback finished.\n")
-
 
 def createSequences():
 
@@ -301,7 +317,6 @@ def createSequences():
   
   return sequencesEventLists, sequencesLoopTimes
 
-
 def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, samples_dict):
 
   """
@@ -324,11 +339,10 @@ def multiprocessingSequencePlayback(sequencesEventLists, sequencesLoopTimes, sam
   for process in processes:
       process.join()
 
-
 def MIDI_Writer(sequencesEventLists):
 
    """
-   Created MIDI Files out of a list of sequences. Saves them as individual tracks / files.
+   Creates MIDI Files out of a list of sequences. Saves them as individual tracks / files.
    Returns True / False message, conditioning the continuation of the loop of further sequence creation.
    
    """
@@ -348,7 +362,7 @@ def MIDI_Writer(sequencesEventLists):
       #Unique Filenaming
       current_time = datetime.datetime.now()
       filetag = current_time.strftime("%Y-%m-%d %H:%M:%S")
-      midi_directory = f"{DIR_PATH}/MIDI_sequences"
+      midi_directory = f"{DIR_PATH}/MIDI_sequences/"
 
       for i, sequence in enumerate(sequencesEventLists):
 
@@ -372,7 +386,6 @@ def MIDI_Writer(sequencesEventLists):
          return False
       if prompt in "Yy":
          return True
-
 
 
 if __name__ == "__main__":
