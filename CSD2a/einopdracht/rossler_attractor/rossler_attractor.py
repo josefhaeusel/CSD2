@@ -25,7 +25,7 @@ DESCRIPTION
 
 Rhythmical sonification of Rössler Attractor based on Treshold and Gradient Conditioning.
 
-Behold the inquisitive normalization (for the sake of simplicity), altering the 'classical' shape of the attractor.
+Behold the inquisitive normalization (for the sake of simplicity), altering the original shape of the attractor (especially compressing Z-Axis)
 
 Plotting realised with Matlab. (Animation work-in-progress; commented out for now)
 Credit to Leo Corte's visualization method https://thebrickinthesky.wordpress.com/2013/02/23/maths-with-python-2-rossler-system/
@@ -256,7 +256,7 @@ def timestampPlayback(timestampsAxis, samples_dict, AxisIndex = "X", DisplaySign
     start_time = time.time()
     end_time = timestampsAxis.pop(-1)
 
-    print(f"Playing Axis {AxisIndex}.")
+    print(f"Playing Axis {AxisIndex}.   Events: {len(timestampsAxis)}")
 
     for n, timestamp in enumerate(timestampsAxis):
     
@@ -352,6 +352,7 @@ def plotData(xx, yy, zz, plot_angle=30, min_display = 0, max_display = 1):
     plt.ion()
     plt.show()
 
+
 """
 #TODO Animation
 
@@ -411,30 +412,62 @@ anim = plotAnimatedData(xx, yy, zz)
 
 """
 
+def viewInteractivePlot():
+
+    """
+    Lets the user interact with 3D plot, while no other processes are running.
+    Prevents the plot from automatically closing, when the code is done executing.
+    
+    """
+
+    input("Enter any character to stop viewing the plot interactively and continue the code.")
+
+
+
+
 
 
 
 
 if __name__ == "__main__":
 
+    #Interesting Parameter Modes (for method 1)
+    # {'a': 0.2, 'b': 0.2, 'c': 14}           Originally studied by Otto Rössler
+    # {'a': 0.2, 'b': 0.2, 'c': __}           Fairly equal distribution.      Vary C for different, but similar results.
+    # {'a': 0.3, 'b': 0.1 - 0.3, 'c': __}     High amount of Z axis beats
+
+    # {'a': 0.1, 'b': 0.3 , 'c': < 10.5}      Unchaotic, Periodic, Overlapping Lines
+    # {'a': 0.1, 'b': 0.3 , 'c': > 10.5}      Circling aroung orbit
+
+    # {'a': 0.2, 'b': 0.3 , 'c': x; 18}       "Vertigo" / interesting bifurcation at range c: 18 - 18.049.
+    #                                         Interesting varying bifurcations at 18.045 - 18.049 other values for C -> rich distribution, equal movement among axis
+
+    # {'a': 0.29, 'b': 0.14, 'c': 14-18}         Rich graphical distribution, big amount of ostinating Z Events. Fairly chaotic rhythm
+    # {'a': 0.29, 'b': 0.14, 'c': 6-12}       Opened oyster shape. Smaller C, Bigger hole in XY Pane
+    # {'a': 0.29, 'b': 0.14, 'c': 5}          Oyster with one dominant line (hardly any Y events)
+    # ...                                     Oyster
+    # {'a': 0.29, 'b': 0.14, 'c': 4}          Bifurcated Oyster                         Rhythm very periodic
+    # {'a': 0.29, 'b': 0.14, 'c': 3}          Bifurcated Oyster with "Moebius Stripe"   Rhythm very periodic
+
     X_Axis, Y_Axis, Z_Axis   =   DataMain(  start_values = [0.1,0.1,0.1],
-                                            parameters = {'a': 0.29, 'b': 0.14, 'c': 14},
-                                            steps= 50000, step_size = 0.01     )
-    
-    
-    #Interesting Parameters
-    # {'a': 0.2, 'b': 0.2, 'c': 14}     -> Better Method 1
-    # {'a': 0.29, 'b': 0.14, 'c': 14}   -> Better Method 2
+                                            parameters = {'a': 0.29, 'b': 0.14, 'c': 18},
+                                            steps= 200000, step_size = 0.01     )
 
     plotData(X_Axis, Y_Axis, Z_Axis)
+    viewInteractivePlot()
     
     AxisData = [X_Axis, Y_Axis, Z_Axis]
 
     ###  Method 1 - Threshold Conditioning
-    AudioMain(DataTresholdConditioning, AxisData, Tresholds = [0.5, 0.5, 0.1], StepsPerSecond = 2500)
+    AudioMain(DataTresholdConditioning, AxisData, Tresholds = [0.1, 0.1, 0.1], StepsPerSecond = 2000)
 
     ###  Method 2 - Gradient Conditioning
-    AudioMain(DataGradientConditioning, AxisData, Tresholds = [0, 0, 0], StepsPerSecond = 2000)
+    AudioMain(DataGradientConditioning, AxisData, Tresholds = [0, 0, 0], StepsPerSecond = 3000)
+
+    viewInteractivePlot()
+
+
+
 
 
 

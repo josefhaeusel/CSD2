@@ -14,12 +14,13 @@ SAMPLES_DICT = {
 }
 
 """
-
-DESCRIPTION:
+DESCRIPTION
+-----------------------
 
 Prompts the user (terminal) to create multiple rhythmical sequences, to be played back simultaneously through multiprocessing.
 
 The created sequences be saved as individual one-track MIDI Files.
+
 
 """
 
