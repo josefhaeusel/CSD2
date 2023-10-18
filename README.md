@@ -1,8 +1,8 @@
 # Repository for works of Creative System Design Year 2 (2023 - 2024)
 
-Comments within every code serve as documentation.
-
 ## Folder structure and content description in 'Bloks':
+
+Comments within every code serve as documentation.
 
 ### CSD2a
 - **opdrachten**
