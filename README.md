@@ -6,7 +6,6 @@ Folder structure and content description in 'Bloks':
 CSD2a
     opdrachten
         -Python Basic Exercises
-
     einopdracht
         -Multisample Sequencer
         -Rössler Sonification
